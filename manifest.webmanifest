@@ -1,0 +1,20 @@
+{
+  "name": "Harcama Takip",
+  "short_name": "Harcama",
+  "description": "Kişisel harcama ve bütçe takibi. Veriler yalnızca bu cihazda saklanır.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f9f9f7",
+  "theme_color": "#f9f9f7",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

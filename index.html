@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harcama Takip</title>
+<meta name="description" content="Kişisel harcama ve bütçe takibi. Veriler yalnızca bu cihazda saklanır.">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Harcama">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="app-bar" id="app-bar">
+  <button class="ay-ok" id="ay-geri" type="button" aria-label="Önceki ay">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <button class="ay-adi" id="ay-adi" type="button" aria-label="Aya git">Eylül 2026</button>
+  <button class="ay-ok" id="ay-ileri" type="button" aria-label="Sonraki ay">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+</header>
+
+<main id="main">
+
+  <!-- ============ ÖZET ============ -->
+  <section class="view" id="view-ozet">
+
+    <div class="kart kart-hero">
+      <p class="hero-etiket">Bu ay harcanan</p>
+      <p class="hero-deger" id="hero-gider">0,00 ₺</p>
+      <p class="hero-delta" id="hero-delta"></p>
+    </div>
+
+    <div class="kpi-satir">
+      <div class="kart kpi">
+        <p class="kpi-etiket">Gelir</p>
+        <p class="kpi-deger" id="kpi-gelir">0,00 ₺</p>
+      </div>
+      <div class="kart kpi">
+        <p class="kpi-etiket">Kalan</p>
+        <p class="kpi-deger" id="kpi-kalan">0,00 ₺</p>
+      </div>
+    </div>
+
+    <div class="kart" id="kart-sabit" hidden>
+      <div class="kart-bas">
+        <h2>Bu ayın sabit giderleri</h2>
+        <button class="dugme-ince" id="sabit-hepsi" type="button">Hepsini ekle</button>
+      </div>
+      <ul class="sade-liste" id="sabit-bekleyen"></ul>
+    </div>
+
+    <div class="kart" id="kart-butce" hidden>
+      <div class="kart-bas"><h2>Bütçe durumu</h2></div>
+      <div id="butce-liste"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas">
+        <h2>Neye ne harcadım</h2>
+        <span class="kart-not" id="kategori-sayi"></span>
+      </div>
+      <div id="kategori-liste"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas"><h2>Gün gün harcama</h2></div>
+      <div class="chart" id="grafik-gunluk"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas"><h2>Son 6 ay</h2></div>
+      <div class="chart" id="grafik-aylar"></div>
+    </div>
+
+  </section>
+
+  <!-- ============ İŞLEMLER ============ -->
+  <section class="view" id="view-islemler" hidden>
+    <div class="filtre-cubugu">
+      <input type="search" id="arama" class="girdi" placeholder="Not veya kategori ara" autocomplete="off">
+      <div class="chip-satir" id="filtre-tur">
+        <button class="chip chip-secili" data-tur="hepsi" type="button">Tümü</button>
+        <button class="chip" data-tur="e" type="button">Gider</button>
+        <button class="chip" data-tur="i" type="button">Gelir</button>
+      </div>
+    </div>
+    <p class="liste-ozet" id="liste-ozet"></p>
+    <div id="islem-liste"></div>
+  </section>
+
+  <!-- ============ AYARLAR ============ -->
+  <section class="view" id="view-ayarlar" hidden>
+
+    <div class="kart">
+      <div class="kart-bas"><h2>Görünüm</h2></div>
+      <div class="chip-satir" id="tema-secim">
+        <button class="chip" data-tema="auto" type="button">Otomatik</button>
+        <button class="chip" data-tema="light" type="button">Açık</button>
+        <button class="chip" data-tema="dark" type="button">Koyu</button>
+      </div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas">
+        <h2>Kategoriler ve bütçe</h2>
+        <button class="dugme-ince" id="kategori-ekle" type="button">+ Yeni</button>
+      </div>
+      <p class="kart-aciklama">Aylık bütçe koyduğun kategoriler özet ekranında çubukla takip edilir.</p>
+      <div id="ayar-kategoriler"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas">
+        <h2>Sabit giderler</h2>
+        <button class="dugme-ince" id="sabit-ekle" type="button">+ Yeni</button>
+      </div>
+      <p class="kart-aciklama">Kira, fatura, abonelik gibi her ay tekrar edenler. Özet ekranından tek tuşla o aya eklersin.</p>
+      <div id="ayar-sabitler"></div>
+    </div>
+
+    <div class="kart">
+      <div class="kart-bas"><h2>Yedekleme</h2></div>
+      <p class="kart-aciklama" id="veri-durum"></p>
+      <div class="dugme-grubu">
+        <button class="dugme dugme-ikincil" id="yedek-indir" type="button">Yedek indir</button>
+        <button class="dugme dugme-ikincil" id="yedek-yukle" type="button">Yedekten yükle</button>
+      </div>
+      <input type="file" id="yedek-dosya" accept="application/json,.json" hidden>
+      <p class="uyari-not">
+        Veriler yalnızca bu tarayıcıda duruyor. Tarayıcı verisini silersen ya da telefonu
+        değiştirirsen kaybolur — ara sıra yedek indir.
+      </p>
+    </div>
+
+    <div class="kart kart-tehlike">
+      <div class="kart-bas"><h2>Tüm veriyi sil</h2></div>
+      <p class="kart-aciklama">Bütün işlemler, kategoriler ve sabit giderler silinir. Geri alınamaz.</p>
+      <button class="dugme dugme-tehlike" id="hepsini-sil" type="button">Her şeyi sil</button>
+    </div>
+
+    <p class="alt-not">
+      Harcama Takip · veriler cihazında<br>
+      Telefonda tarayıcı menüsünden <b>Ana ekrana ekle</b> dersen uygulama gibi açılır.
+    </p>
+  </section>
+
+</main>
+
+<button class="fab" id="fab" type="button" aria-label="Harcama ekle">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab tab-secili" data-view="ozet" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
+    <span>Özet</span>
+  </button>
+  <button class="tab" data-view="islemler" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    <span>İşlemler</span>
+  </button>
+  <button class="tab" data-view="ayarlar" type="button">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H3a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V3a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
+    <span>Ayarlar</span>
+  </button>
+</nav>
+
+<!-- ============ GİRİŞ SAYFASI (alt panel) ============ -->
+<div class="panel-perde" id="perde" hidden></div>
+
+<section class="panel" id="panel-giris" hidden aria-label="Harcama girişi">
+  <div class="panel-bas">
+    <button class="panel-kapat" id="giris-kapat" type="button" aria-label="Kapat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="chip-satir chip-satir-orta" id="giris-tur">
+      <button class="chip chip-secili" data-tur="e" type="button">Gider</button>
+      <button class="chip" data-tur="i" type="button">Gelir</button>
+    </div>
+    <button class="panel-sil" id="giris-sil" type="button" hidden>Sil</button>
+  </div>
+
+  <div class="tutar-alani">
+    <output class="giris-tutar" id="tutar-goster">0</output>
+    <span class="tutar-birim">₺</span>
+  </div>
+
+  <div class="kategori-izgara" id="giris-kategoriler"></div>
+
+  <div class="giris-detay">
+    <div class="chip-satir" id="giris-tarih-hizli">
+      <button class="chip chip-secili" data-gun="0" type="button">Bugün</button>
+      <button class="chip" data-gun="1" type="button">Dün</button>
+      <button class="chip" data-gun="2" type="button">Evvelsi gün</button>
+    </div>
+    <div class="detay-satir">
+      <input type="date" class="girdi girdi-tarih" id="giris-tarih">
+      <input type="text" class="girdi" id="giris-not" placeholder="Not (isteğe bağlı)" autocomplete="off" maxlength="80">
+    </div>
+  </div>
+
+  <div class="tuslar" id="tuslar">
+    <button class="tus" data-tus="1" type="button">1</button>
+    <button class="tus" data-tus="2" type="button">2</button>
+    <button class="tus" data-tus="3" type="button">3</button>
+    <button class="tus" data-tus="4" type="button">4</button>
+    <button class="tus" data-tus="5" type="button">5</button>
+    <button class="tus" data-tus="6" type="button">6</button>
+    <button class="tus" data-tus="7" type="button">7</button>
+    <button class="tus" data-tus="8" type="button">8</button>
+    <button class="tus" data-tus="9" type="button">9</button>
+    <button class="tus tus-ikincil" data-tus="," type="button">,</button>
+    <button class="tus" data-tus="0" type="button">0</button>
+    <button class="tus tus-ikincil" data-tus="sil" type="button" aria-label="Sil">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 5H9l-5 7 5 7h11a1 1 0 001-1V6a1 1 0 00-1-1zM17 9l-5 6M12 9l5 6"/></svg>
+    </button>
+  </div>
+
+  <button class="dugme dugme-birincil dugme-kaydet" id="giris-kaydet" type="button">Kaydet</button>
+</section>
+
+<!-- ============ GENEL FORM PANELİ (kategori / sabit gider) ============ -->
+<section class="panel panel-form" id="panel-form" hidden aria-label="Form">
+  <div class="panel-bas">
+    <button class="panel-kapat" id="form-kapat" type="button" aria-label="Kapat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <h2 class="panel-baslik" id="form-baslik">Düzenle</h2>
+    <button class="panel-sil" id="form-sil" type="button" hidden>Sil</button>
+  </div>
+  <div class="form-govde" id="form-govde"></div>
+  <button class="dugme dugme-birincil dugme-kaydet" id="form-kaydet" type="button">Kaydet</button>
+</section>
+
+<div class="bildirim" id="bildirim" hidden role="status"></div>
+
+<script src="js/store.js"></script>
+<script src="js/format.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

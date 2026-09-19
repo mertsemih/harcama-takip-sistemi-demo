@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+Thumbs.db
+.vercel
+*.log
+
+# Kişisel yedek dosyaları asla depoya girmesin
+harcama-yedek-*.json
