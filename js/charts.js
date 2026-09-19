@@ -95,14 +95,10 @@
         var vurgu = o.emphasisKey != null && d.key === o.emphasisKey;
 
         if (d.value > 0) {
-          var yol = el('path', {
+          svg.appendChild(el('path', {
             d: sutunYolu(x, y, g, taban, 4),
-            class: 'bar bar-gelis' +
-                   (vurgu ? ' bar-vurgu' : (o.emphasisKey != null ? ' bar-soluk' : ''))
-          });
-          /* soldan sağa dalga halinde açılsın */
-          yol.style.animationDelay = Math.min(i * 14, 260) + 'ms';
-          svg.appendChild(yol);
+            class: 'bar' + (vurgu ? ' bar-vurgu' : (o.emphasisKey != null ? ' bar-soluk' : ''))
+          }));
         }
 
         /* Görünmez, geniş dokunma hedefi (parmak için sütunun kendisi dar kalıyor) */

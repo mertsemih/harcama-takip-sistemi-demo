@@ -150,12 +150,5 @@ tools/make-icons.mjs       ikon üretici (node tools/make-icons.mjs)
   Ekrana basarken 100'e bölünüyor.
 - **Tüm okuma/yazma `store.js` üzerinden geçer.** İleride veriyi buluta taşımak
   istersen yalnızca o dosyadaki `load`/`save` değişir, ekran kodu aynı kalır.
-- **Renkler, yarıçaplar ve hareket eğrileri `style.css` başındaki jetonlarda.**
-  Görünümü değiştirmek istersen tek yer orası; koyu tema aynı jetonları yeniden
-  tanımlıyor (otomatik ters çevirme yok). Hareket dili [beui.dev](https://beui.dev)
-  esinli — o kütüphane React + Tailwind + Framer Motion olduğu için kodu değil
-  tasarım dili alındı, hepsi saf CSS ile yazıldı.
-- **Her animasyon `prefers-reduced-motion` tercihine uyar.** Telefonda "hareketi
-  azalt" açıksa geçişler kapanır, işlevsellik aynı kalır.
 - İkonları değiştirmek istersen `icons/icon.svg`'yi düzenle, sonra
   `node tools/make-icons.mjs` ile PNG'leri yeniden üret.
