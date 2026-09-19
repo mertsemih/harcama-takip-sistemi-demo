@@ -89,10 +89,11 @@
   <section class="view" id="view-islemler" hidden>
     <div class="filtre-cubugu">
       <input type="search" id="arama" class="girdi" placeholder="Not veya kategori ara" autocomplete="off">
-      <div class="chip-satir" id="filtre-tur">
-        <button class="chip chip-secili" data-tur="hepsi" type="button">Tümü</button>
-        <button class="chip" data-tur="e" type="button">Gider</button>
-        <button class="chip" data-tur="i" type="button">Gelir</button>
+      <div class="segment" id="filtre-tur" role="tablist">
+        <span class="segment-ind" aria-hidden="true"></span>
+        <button class="segment-op secili" data-tur="hepsi" type="button" role="tab">Tümü</button>
+        <button class="segment-op" data-tur="e" type="button" role="tab">Gider</button>
+        <button class="segment-op" data-tur="i" type="button" role="tab">Gelir</button>
       </div>
     </div>
     <p class="liste-ozet" id="liste-ozet"></p>
@@ -112,10 +113,11 @@
 
     <div class="kart">
       <div class="kart-bas"><h2>Görünüm</h2></div>
-      <div class="chip-satir" id="tema-secim">
-        <button class="chip" data-tema="auto" type="button">Otomatik</button>
-        <button class="chip" data-tema="light" type="button">Açık</button>
-        <button class="chip" data-tema="dark" type="button">Koyu</button>
+      <div class="segment" id="tema-secim">
+        <span class="segment-ind" aria-hidden="true"></span>
+        <button class="segment-op" data-tema="auto" type="button">Otomatik</button>
+        <button class="segment-op" data-tema="light" type="button">Açık</button>
+        <button class="segment-op" data-tema="dark" type="button">Koyu</button>
       </div>
     </div>
 
@@ -169,16 +171,17 @@
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
 </button>
 
-<nav class="tabbar" id="tabbar">
-  <button class="tab tab-secili" data-view="ozet" type="button">
+<nav class="tabbar segment" id="tabbar">
+  <span class="segment-ind" aria-hidden="true"></span>
+  <button class="tab segment-op secili" data-view="ozet" type="button">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V10M10 19V5M16 19v-6M22 19H2"/></svg>
     <span>Özet</span>
   </button>
-  <button class="tab" data-view="islemler" type="button">
+  <button class="tab segment-op" data-view="islemler" type="button">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
     <span>İşlemler</span>
   </button>
-  <button class="tab" data-view="ayarlar" type="button">
+  <button class="tab segment-op" data-view="ayarlar" type="button">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.6 1.6 0 008 19.4a1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H3a2 2 0 110-4h.1A1.6 1.6 0 004.6 8a1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V3a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"/></svg>
     <span>Ayarlar</span>
   </button>
@@ -192,9 +195,10 @@
     <button class="panel-kapat" id="giris-kapat" type="button" aria-label="Kapat">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
-    <div class="chip-satir chip-satir-orta" id="giris-tur">
-      <button class="chip chip-secili" data-tur="e" type="button">Gider</button>
-      <button class="chip" data-tur="i" type="button">Gelir</button>
+    <div class="segment segment-dar segment-orta" id="giris-tur">
+      <span class="segment-ind" aria-hidden="true"></span>
+      <button class="segment-op secili" data-tur="e" type="button">Gider</button>
+      <button class="segment-op" data-tur="i" type="button">Gelir</button>
     </div>
     <button class="panel-sil" id="giris-sil" type="button" hidden>Sil</button>
   </div>
@@ -207,10 +211,11 @@
   <div class="kategori-izgara" id="giris-kategoriler"></div>
 
   <div class="giris-detay">
-    <div class="chip-satir" id="giris-tarih-hizli">
-      <button class="chip chip-secili" data-gun="0" type="button">Bugün</button>
-      <button class="chip" data-gun="1" type="button">Dün</button>
-      <button class="chip" data-gun="2" type="button">Evvelsi gün</button>
+    <div class="segment" id="giris-tarih-hizli">
+      <span class="segment-ind" aria-hidden="true"></span>
+      <button class="segment-op secili" data-gun="0" type="button">Bugün</button>
+      <button class="segment-op" data-gun="1" type="button">Dün</button>
+      <button class="segment-op" data-gun="2" type="button">Evvelsi gün</button>
     </div>
     <div class="detay-satir">
       <input type="date" class="girdi girdi-tarih" id="giris-tarih">
@@ -261,10 +266,11 @@
   </div>
 
   <div class="form-govde">
-    <div class="chip-satir" id="donem-tip">
-      <button class="chip" data-tip="ay" type="button">Takvim ayı</button>
-      <button class="chip" data-tip="dongu" type="button">Maaş dönemi</button>
-      <button class="chip" data-tip="ozel" type="button">Özel aralık</button>
+    <div class="segment" id="donem-tip">
+      <span class="segment-ind" aria-hidden="true"></span>
+      <button class="segment-op" data-tip="ay" type="button">Takvim ayı</button>
+      <button class="segment-op" data-tip="dongu" type="button">Maaş dönemi</button>
+      <button class="segment-op" data-tip="ozel" type="button">Özel aralık</button>
     </div>
 
     <div class="form-alan" id="donem-dongu-alan" hidden>
@@ -293,6 +299,7 @@
 <script src="js/store.js"></script>
 <script src="js/format.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/ui.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

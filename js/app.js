@@ -2,7 +2,7 @@
 (function (global) {
   'use strict';
 
-  var S = global.Store, F = global.Fmt, C = global.Charts;
+  var S = global.Store, F = global.Fmt, C = global.Charts, U = global.UI;
 
   function $(id) { return document.getElementById(id); }
   function yeni(etiket, sinif, metin) {
@@ -31,6 +31,7 @@
     var b = $('bildirim');
     b.textContent = metin;
     b.hidden = false;
+    U.titret(8);
     requestAnimationFrame(function () { b.classList.add('acik'); });
     clearTimeout(bildirimZaman);
     bildirimZaman = setTimeout(function () {
@@ -45,9 +46,7 @@
     var t = S.settings().theme || 'auto';
     if (t === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = t;
-    Array.prototype.forEach.call($('tema-secim').children, function (c) {
-      c.classList.toggle('chip-secili', c.dataset.tema === t);
-    });
+    U.segmentDeger($('tema-secim'), 'tema', t);
   }
 
   /* ================= gezinme ================= */
@@ -57,13 +56,23 @@
     ['ozet', 'islemler', 'ayarlar'].forEach(function (v) {
       $('view-' + v).hidden = v !== ad;
     });
-    Array.prototype.forEach.call($('tabbar').children, function (t) {
-      t.classList.toggle('tab-secili', t.dataset.view === ad);
+    var tablar = $('tabbar').querySelectorAll('.tab');
+    Array.prototype.forEach.call(tablar, function (t) {
+      t.classList.toggle('secili', t.dataset.view === ad);
     });
+    U.segment($('tabbar'), true);
+
     $('app-bar').hidden = (ad === 'ayarlar');
     $('fab').hidden = (ad === 'ayarlar');
     global.scrollTo(0, 0);
     ciz();
+
+    /* kartlar sırayla belirsin, görünümdeki segmentler yerine otursun */
+    var gorunum = $('view-' + ad);
+    U.kartlariGetir(gorunum);
+    Array.prototype.forEach.call(gorunum.querySelectorAll('.segment'), function (sg) {
+      U.segment(sg, false);
+    });
   }
 
   function donemKaydir(delta) {
@@ -74,7 +83,15 @@
   /* ================= çizim ================= */
 
   function ciz() {
-    $('ay-adi-metin').textContent = F.donemEtiket(durum.donem);
+    /* dönem adı değiştiyse yumuşak bir bulanık geçişle yenilensin */
+    var etiket = $('ay-adi-metin');
+    var yeniEtiket = F.donemEtiket(durum.donem);
+    if (etiket.textContent !== yeniEtiket) {
+      etiket.textContent = yeniEtiket;
+      etiket.classList.remove('etiket-gecis');
+      void etiket.offsetWidth;
+      etiket.classList.add('etiket-gecis');
+    }
     // başlangıcı bugünü geçen bir döneme bakmanın anlamı yok: bir dönem ileri yeter
     $('ay-ileri').disabled = durum.donem.bas > S.todayISO();
 
@@ -95,7 +112,7 @@
     $('hero-etiket').textContent = bugunIcinde
       ? (d.tip === 'ay' ? 'Bu ay harcanan' : 'Bu dönemde harcanan')
       : 'Toplam harcama';
-    $('hero-gider').textContent = F.para(ist.expense);
+    U.sayi($('hero-gider'), ist.expense, function (v) { return F.para(v); });
 
     var oncekiSoz = d.tip === 'ay' ? 'Geçen aya' : 'Önceki döneme';
     var delta = $('hero-delta');
@@ -118,10 +135,10 @@
       }
     }
 
-    $('kpi-gelir').textContent = F.para(ist.income);
+    U.sayi($('kpi-gelir'), ist.income, function (v) { return F.para(v); });
     var kalan = $('kpi-kalan');
-    kalan.textContent = F.para(ist.net, { isaret: ist.net > 0 });
     kalan.className = 'kpi-deger ' + (ist.net < 0 ? 'eksi' : ist.net > 0 ? 'arti' : '');
+    U.sayi(kalan, ist.net, function (v) { return F.para(v, { isaret: v > 0 }); });
 
     cizSabitKart();
     cizButceKart(ist);
@@ -485,6 +502,10 @@
     requestAnimationFrame(function () {
       perde.classList.add('acik');
       p.classList.add('acik');
+      /* panel gizliyken ölçüm 0 döner; görünür olunca göstergeleri yerleştir */
+      Array.prototype.forEach.call(p.querySelectorAll('.segment'), function (sg) {
+        U.segment(sg, false);
+      });
     });
     acikPanel = p;
     document.body.style.overflow = 'hidden';
@@ -530,9 +551,7 @@
   }
 
   function donemPaneliYenile() {
-    Array.prototype.forEach.call($('donem-tip').children, function (c) {
-      c.classList.toggle('chip-secili', c.dataset.tip === donemTaslak.tip);
-    });
+    U.segmentDeger($('donem-tip'), 'tip', donemTaslak.tip);
     $('donem-dongu-alan').hidden = donemTaslak.tip !== 'dongu';
     $('donem-ozel-alan').hidden = donemTaslak.tip !== 'ozel';
 
@@ -610,9 +629,7 @@
       g.textContent = metin;
     }
 
-    Array.prototype.forEach.call($('giris-tur').children, function (c) {
-      c.classList.toggle('chip-secili', c.dataset.tur === giris.tur);
-    });
+    U.segmentDeger($('giris-tur'), 'tur', giris.tur);
 
     var izgara = $('giris-kategoriler');
     izgara.innerHTML = '';
@@ -630,10 +647,8 @@
       izgara.appendChild(b);
     });
 
-    var fark = gunFarki(giris.tarih);
-    Array.prototype.forEach.call($('giris-tarih-hizli').children, function (c) {
-      c.classList.toggle('chip-secili', +c.dataset.gun === fark);
-    });
+    /* tarih üç kısayoldan biri değilse hiçbiri seçili olmaz, gösterge saklanır */
+    U.segmentDeger($('giris-tarih-hizli'), 'gun', gunFarki(giris.tarih));
     $('giris-tarih').value = giris.tarih;
   }
 
@@ -723,6 +738,24 @@
     return d;
   }
 
+  /* Gider/Gelir gibi az seçenekli, kayan göstergeli seçici üretir */
+  function segmentYap(secenekler, secili, secildi) {
+    var kap = yeni('div', 'segment');
+    var ind = yeni('span', 'segment-ind');
+    ind.setAttribute('aria-hidden', 'true');
+    kap.appendChild(ind);
+    secenekler.forEach(function (p) {
+      var b = yeni('button', 'segment-op' + (p[0] === secili ? ' secili' : ''), p[1]);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        U.segmentSec(kap, b);
+        secildi(p[0]);
+      });
+      kap.appendChild(b);
+    });
+    return kap;
+  }
+
   function metinGirdi(id, deger, yerTutucu, mod) {
     var i = document.createElement('input');
     i.type = 'text';
@@ -773,20 +806,9 @@
     alanlar.push(alan('Simge', emojiSecici(taslak.emoji, function (e) { taslak.emoji = e; })));
 
     if (yeniMi) {
-      var turSatir = yeni('div', 'chip-satir');
-      [['e', 'Gider'], ['i', 'Gelir']].forEach(function (p) {
-        var b = yeni('button', 'chip' + (taslak.type === p[0] ? ' chip-secili' : ''), p[1]);
-        b.type = 'button';
-        b.addEventListener('click', function () {
-          taslak.type = p[0];
-          Array.prototype.forEach.call(turSatir.children, function (x) {
-            x.classList.remove('chip-secili');
-          });
-          b.classList.add('chip-secili');
-        });
-        turSatir.appendChild(b);
-      });
-      alanlar.push(alan('Tür', turSatir));
+      alanlar.push(alan('Tür', segmentYap(
+        [['e', 'Gider'], ['i', 'Gelir']], taslak.type,
+        function (v) { taslak.type = v; })));
     }
 
     if (taslak.type === 'e') {
@@ -853,20 +875,10 @@
     gunGirdi.max = '28';
     gunGirdi.value = mevcut ? mevcut.day : 1;
 
-    var turSatir = yeni('div', 'chip-satir');
-    [['e', 'Gider'], ['i', 'Gelir']].forEach(function (p) {
-      var b = yeni('button', 'chip' + (taslak.t === p[0] ? ' chip-secili' : ''), p[1]);
-      b.type = 'button';
-      b.addEventListener('click', function () {
-        taslak.t = p[0];
-        taslak.c = null;
-        Array.prototype.forEach.call(turSatir.children, function (x) {
-          x.classList.remove('chip-secili');
-        });
-        b.classList.add('chip-secili');
-        secimDoldur();
-      });
-      turSatir.appendChild(b);
+    var turSatir = segmentYap([['e', 'Gider'], ['i', 'Gelir']], taslak.t, function (v) {
+      taslak.t = v;
+      taslak.c = null;
+      secimDoldur();
     });
 
     var alanlar = [
@@ -964,7 +976,7 @@
     $('ay-ileri').addEventListener('click', function () { donemKaydir(1); });
     $('ay-adi').addEventListener('click', donemPaneliAc);
 
-    Array.prototype.forEach.call($('tabbar').children, function (t) {
+    Array.prototype.forEach.call($('tabbar').querySelectorAll('.tab'), function (t) {
       t.addEventListener('click', function () { viewGoster(t.dataset.view); });
     });
 
@@ -975,7 +987,7 @@
     $('donem-uygula').addEventListener('click', donemUygula);
     $('donem-ayar-ac').addEventListener('click', donemPaneliAc);
     $('donem-tip').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
+      var b = e.target.closest('.segment-op');
       if (!b) return;
       donemTaslak.tip = b.dataset.tip;
       donemPaneliYenile();
@@ -1013,7 +1025,7 @@
     });
 
     $('giris-tur').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
+      var b = e.target.closest('.segment-op');
       if (!b) return;
       giris.tur = b.dataset.tur;
       giris.cat = S.settings()['sonKat_' + giris.tur] || null;
@@ -1021,7 +1033,7 @@
     });
 
     $('giris-tarih-hizli').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
+      var b = e.target.closest('.segment-op');
       if (!b) return;
       var d = new Date();
       d.setDate(d.getDate() - (+b.dataset.gun));
@@ -1043,18 +1055,16 @@
       cizIslemler();
     });
     $('filtre-tur').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
+      var b = e.target.closest('.segment-op');
       if (!b) return;
       durum.tur = b.dataset.tur;
-      Array.prototype.forEach.call(this.children, function (x) {
-        x.classList.toggle('chip-secili', x === b);
-      });
+      U.segmentSec(this, b);
       cizIslemler();
     });
 
     /* --- ayarlar --- */
     $('tema-secim').addEventListener('click', function (e) {
-      var b = e.target.closest('.chip');
+      var b = e.target.closest('.segment-op');
       if (!b) return;
       S.setSetting('theme', b.dataset.tema);
       temaUygula();
