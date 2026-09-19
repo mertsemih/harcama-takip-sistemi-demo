@@ -136,6 +136,10 @@ h1, h2, h3, p { margin: 0; }
 .ay-adi {
   border: 0;
   background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   font-size: 17px;
   font-weight: 600;
   letter-spacing: -.01em;
@@ -144,6 +148,21 @@ h1, h2, h3, p { margin: 0; }
   border-radius: var(--r-kucuk);
 }
 .ay-adi:active { background: var(--surface-2); }
+.ay-adi-ok { width: 16px; height: 16px; color: var(--ink-3); flex: none; }
+
+/* sabit gider satırında ad + tarih alt alta */
+.sabit-ad { min-width: 0; }
+.sabit-tarih { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+
+/* dönem panelindeki canlı önizleme */
+.donem-onizleme {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  background: var(--surface-2);
+  border-radius: var(--r-kucuk);
+  padding: 11px 13px;
+  text-align: center;
+}
 
 /* ---------------- görünümler ---------------- */
 

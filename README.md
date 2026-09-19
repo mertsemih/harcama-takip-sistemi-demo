@@ -4,11 +4,42 @@ Telefondan kullanmak için yapılmış kişisel harcama takip uygulaması.
 Kurulum gerektirmez, sunucusu yoktur, **veriler yalnızca senin telefonunda durur**.
 
 - Tek tuşla tutar gir, kategori seç, kaydet
-- Ay ay özet: ne kadar harcadın, nereye gitti, geçen aya göre ne oldu
+- **Kendi dönemin:** takvim ayı, maaş dönemi (ör. her ayın 15'i) ya da serbest tarih aralığı
+- Dönem dönem özet: ne kadar harcadın, nereye gitti, önceki döneme göre ne oldu
 - Kategori bazlı aylık bütçe ve uyarı çubukları
-- Kira / fatura / abonelik gibi sabit giderleri tek tuşla o aya ekleme
-- Gelir de girilebilir, ay sonunda "kalan" görünür
+- Kira / fatura / abonelik gibi sabit giderleri tek tuşla o döneme ekleme
+- Gelir de girilebilir, dönem sonunda "kalan" görünür
 - Açık / koyu tema, internetsiz çalışma, ana ekrana eklenince uygulama gibi açılma
+
+---
+
+## Dönem — takvim ayına mahkûm değilsin
+
+Üstteki başlığa (ör. *15 Eyl – 14 Eki*) dokununca dönem seçici açılır. Üç seçenek var:
+
+| Seçenek | Ne yapar |
+|---|---|
+| **Takvim ayı** | Klasik: ayın 1'i – ayın sonu |
+| **Maaş dönemi** | Maaşının yattığı günü (1–28) verirsin; dönemler o günde başlar, bir sonraki ayın bir önceki gününde biter. 15 dersen: *15 Eylül – 14 Ekim* |
+| **Özel aralık** | İki tarih seçersin, sadece o aralığa bakarsın |
+
+Seçtiğin sonrasında her şey o döneme göre hesaplanır: toplamlar, kategori dağılımı,
+bütçe çubukları, işlem listesi. Baştaki **‹ ›** okları bir önceki / bir sonraki
+döneme geçirir — özel aralıkta da aynı uzunlukta kaydırır (30 günlük aralık
+seçtiysen ok bir önceki 30 güne götürür).
+
+Takvim ayı ve maaş dönemi tercihi **kalıcıdır**, uygulamayı kapatıp açınca hatırlanır.
+Özel aralık tek seferlik bir bakıştır.
+
+Birkaç ince nokta:
+
+- **Sabit giderler dönemi takip eder.** 15 Eylül – 14 Ekim dönemindeysen ve kiran
+  ayın 5'iyse, kart sana **5 Ekim** kirasını gösterir — 5 Eylül'ünkini değil, o
+  önceki döneme aitti.
+- **Bütçe çubukları özel aralıkta gizlenir.** Bütçeler aylık tanımlı; 81 günlük bir
+  aralıkla kıyaslamak yanıltıcı olurdu. Takvim ayı ve maaş döneminde çalışır.
+- **Uzun aralıklarda grafik ay ay toplar.** 62 günü geçince "Gün gün harcama" yerine
+  "Ay ay harcama" çizilir, yoksa 200 tane sütun okunmaz olurdu.
 
 ---
 

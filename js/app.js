@@ -1,4 +1,4 @@
-/* Uygulama mantığı: görünümler, giriş paneli, ayarlar. */
+/* Uygulama mantığı: görünümler, giriş paneli, dönem seçimi, ayarlar. */
 (function (global) {
   'use strict';
 
@@ -12,13 +12,17 @@
     return e;
   }
 
-  var buAy = S.todayISO().slice(0, 7);
   var durum = {
-    ym: buAy,
+    donem: null,      // basla() içinde ayarlardan kurulur
     view: 'ozet',
     arama: '',
     tur: 'hepsi'
   };
+
+  function varsayilanDonem() {
+    var a = S.settings();
+    return S.bugununDonemi(a.donemTipi === 'dongu' ? 'dongu' : 'ay', a.donguGunu || 15);
+  }
 
   /* ================= bildirim ================= */
 
@@ -62,17 +66,17 @@
     ciz();
   }
 
-  function ayDegistir(delta) {
-    durum.ym = S.shiftMonth(durum.ym, delta);
+  function donemKaydir(delta) {
+    durum.donem = S.donemKaydir(durum.donem, delta);
     ciz();
   }
 
   /* ================= çizim ================= */
 
   function ciz() {
-    $('ay-adi').textContent = F.ayAdi(durum.ym);
-    // gelecek aya sınırsız gitmenin anlamı yok: bir ay ileriye izin ver
-    $('ay-ileri').disabled = S.shiftMonth(durum.ym, -1) >= buAy;
+    $('ay-adi-metin').textContent = F.donemEtiket(durum.donem);
+    // başlangıcı bugünü geçen bir döneme bakmanın anlamı yok: bir dönem ileri yeter
+    $('ay-ileri').disabled = durum.donem.bas > S.todayISO();
 
     if (durum.view === 'ozet') cizOzet();
     else if (durum.view === 'islemler') cizIslemler();
@@ -82,25 +86,34 @@
   /* ---------------- ÖZET ---------------- */
 
   function cizOzet() {
-    var ist = S.monthStats(durum.ym);
-    var oncekiYm = S.shiftMonth(durum.ym, -1);
-    var onceki = S.monthStats(oncekiYm);
+    var d = durum.donem;
+    var bugun = S.todayISO();
+    var ist = S.donemIstatistik(d);
+    var onceki = S.donemIstatistik(S.donemKaydir(d, -1));
+    var bugunIcinde = d.bas <= bugun && bugun <= d.son;
 
+    $('hero-etiket').textContent = bugunIcinde
+      ? (d.tip === 'ay' ? 'Bu ay harcanan' : 'Bu dönemde harcanan')
+      : 'Toplam harcama';
     $('hero-gider').textContent = F.para(ist.expense);
 
+    var oncekiSoz = d.tip === 'ay' ? 'Geçen aya' : 'Önceki döneme';
     var delta = $('hero-delta');
     delta.className = 'hero-delta';
     if (!onceki.expense) {
-      delta.textContent = ist.expense ? 'Geçen ay kaydın yok, kıyaslama yapamıyorum.' : '';
+      delta.textContent = ist.expense
+        ? (d.tip === 'ay' ? 'Geçen ay kaydın yok, kıyaslama yapamıyorum.'
+                          : 'Önceki dönemde kaydın yok, kıyaslama yapamıyorum.')
+        : '';
     } else {
       var yuzde = F.yuzdeFark(ist.expense, onceki.expense);
       if (yuzde === 0) {
-        delta.textContent = 'Geçen ayla neredeyse aynı';
+        delta.textContent = oncekiSoz + ' göre neredeyse aynı';
       } else {
         var artti = yuzde > 0;
         delta.classList.add(artti ? 'artis' : 'azalis');
         delta.innerHTML = '<span class="ok">' + (artti ? '↑' : '↓') + '</span>' +
-          '<span>Geçen aya göre %' + Math.abs(yuzde) + ' ' +
+          '<span>' + oncekiSoz + ' göre %' + Math.abs(yuzde) + ' ' +
           (artti ? 'daha fazla' : 'daha az') + '</span>';
       }
     }
@@ -115,57 +128,31 @@
     cizKategoriListe(ist);
 
     C.temizleKayit();
-
-    /* gün gün harcama */
-    var gunVeri = ist.byDay.map(function (g) {
-      var iso = durum.ym + '-' + S.pad2(g.day);
-      return {
-        key: g.day, label: String(g.day), value: g.total,
-        tipTitle: F.tarih(iso, { hamTarih: true, gunAdi: true }),
-        tipValue: F.para(g.total)
-      };
-    });
-    var g1 = C.sutun($('grafik-gunluk'), {
-      data: gunVeri,
-      height: 168,
-      ariaLabel: F.ayAdi(durum.ym) + ' ayının günlük harcaması',
-      empty: 'Bu ay henüz harcama girmemişsin.',
-      // 1 ve beşin katları: bitişik etiketlerin üst üste binmesini engeller
-      labelEvery: function (d) { return d.key === 1 || d.key % 5 === 0; }
-    });
-    C.kaydet(g1.yenidenCiz);
-
-    /* son 6 ay */
-    var aylar = S.lastMonths(6, durum.ym).map(function (m) {
-      return {
-        key: m.ym, label: F.ayKisa(m.ym), value: m.expense,
-        tipTitle: F.ayAdi(m.ym), tipValue: F.para(m.expense)
-      };
-    });
-    var g2 = C.sutun($('grafik-aylar'), {
-      data: aylar,
-      height: 168,
-      emphasisKey: durum.ym,
-      ariaLabel: 'Son 6 ayın harcaması',
-      empty: 'Kıyaslamak için birkaç aylık kayıt gerekiyor.',
-      labelEvery: function () { return true; }
-    });
-    C.kaydet(g2.yenidenCiz);
+    cizZamanGrafigi(ist);
+    cizDonemGrafigi();
   }
 
   function cizSabitKart() {
-    var bekleyen = S.pendingFixed(durum.ym);
+    var bekleyen = S.pendingFixed(durum.donem);
     var kart = $('kart-sabit');
     if (!bekleyen.length) { kart.hidden = true; return; }
     kart.hidden = false;
+    $('baslik-sabit').textContent = durum.donem.tip === 'ay'
+      ? 'Bu ayın sabit giderleri'
+      : 'Bu dönemin sabit giderleri';
 
     var liste = $('sabit-bekleyen');
     liste.innerHTML = '';
-    bekleyen.forEach(function (f) {
+    bekleyen.forEach(function (x) {
+      var f = x.fixed;
       var li = document.createElement('li');
+
       var sol = yeni('div', 'sol');
       sol.appendChild(yeni('span', 'emoji', S.cat(f.c).emoji));
-      sol.appendChild(yeni('span', null, f.name));
+      var ad = yeni('div', 'sabit-ad');
+      ad.appendChild(yeni('div', null, f.name));
+      ad.appendChild(yeni('div', 'sabit-tarih', F.tarihKisa(x.iso)));
+      sol.appendChild(ad);
       li.appendChild(sol);
 
       var sag = yeni('div', 'sol');
@@ -173,11 +160,12 @@
       var dugme = yeni('button', 'dugme-ince', '+ Ekle');
       dugme.type = 'button';
       dugme.addEventListener('click', function () {
-        S.applyFixed(f.id, durum.ym);
+        S.applyFixed(f.id, x.ym);
         bildir(f.name + ' eklendi');
       });
       sag.appendChild(dugme);
       li.appendChild(sag);
+
       liste.appendChild(li);
     });
   }
@@ -185,7 +173,8 @@
   function cizButceKart(ist) {
     var butceli = S.cats('e').filter(function (c) { return c.budget; });
     var kart = $('kart-butce');
-    if (!butceli.length) { kart.hidden = true; return; }
+    /* Bütçeler aylık tanımlı — serbest aralıkta kıyaslamak yanıltıcı olur */
+    if (!butceli.length || durum.donem.tip === 'ozel') { kart.hidden = true; return; }
     kart.hidden = false;
 
     var kap = $('butce-liste');
@@ -209,8 +198,7 @@
       ust.appendChild(ad);
       var tutar = yeni('div', 'kat-tutar');
       tutar.textContent = F.para(harcama, { tamsayi: true });
-      var bolu = yeni('span', 'kat-yuzde', '/ ' + F.para(c.budget, { tamsayi: true }));
-      tutar.appendChild(bolu);
+      tutar.appendChild(yeni('span', 'kat-yuzde', '/ ' + F.para(c.budget, { tamsayi: true })));
       ust.appendChild(tutar);
       satir.appendChild(ust);
 
@@ -237,8 +225,8 @@
     $('kategori-sayi').textContent = ist.count ? ist.count + ' işlem' : '';
 
     if (!ist.byCat.length) {
-      var bos = yeni('p', 'chart-empty', 'Bu ay harcama kaydı yok. Sağ alttaki + ile ekleyebilirsin.');
-      kap.appendChild(bos);
+      kap.appendChild(yeni('p', 'chart-empty',
+        'Bu dönemde harcama kaydı yok. Sağ alttaki + ile ekleyebilirsin.'));
       return;
     }
 
@@ -269,10 +257,86 @@
     });
   }
 
+  /* Dönemdeki her ay, harcaması olmasa bile sütun olarak yer alsın */
+  function aylikDizi(ist) {
+    var harita = {};
+    ist.byAy.forEach(function (a) { harita[a.ym] = a.total; });
+    var out = [];
+    var ym = S.ymOf(ist.bas), sonYm = S.ymOf(ist.son), guvenlik = 0;
+    while (guvenlik++ < 600) {
+      out.push({ ym: ym, total: harita[ym] || 0 });
+      if (ym >= sonYm) break;
+      ym = S.shiftMonth(ym, 1);
+    }
+    return out;
+  }
+
+  /* Dönem 2 aydan uzunsa gün gün çizmek okunmaz olur; ay ay toplanır. */
+  function cizZamanGrafigi(ist) {
+    var gunlukMu = ist.gunSayisi <= 62 && ist.byGun.length > 0;
+    $('baslik-gunluk').textContent = gunlukMu ? 'Gün gün harcama' : 'Ay ay harcama';
+
+    var veri;
+    if (gunlukMu) {
+      veri = ist.byGun.map(function (g) {
+        return {
+          key: g.iso, label: String(g.gun), value: g.total,
+          tipTitle: F.tarih(g.iso, { hamTarih: true, gunAdi: true }),
+          tipValue: F.para(g.total)
+        };
+      });
+    } else {
+      veri = aylikDizi(ist).map(function (a) {
+        return {
+          key: a.ym, label: F.ayKisa(a.ym), value: a.total,
+          tipTitle: F.ayAdi(a.ym), tipValue: F.para(a.total)
+        };
+      });
+    }
+
+    var g = C.sutun($('grafik-gunluk'), {
+      data: veri,
+      height: 168,
+      ariaLabel: F.donemEtiket(durum.donem) + ' harcama dağılımı',
+      empty: 'Bu dönemde henüz harcama girmemişsin.',
+      /* Takvim ayında 1 ve beşin katları düzgün durur. Diğer dönemlerde gün
+         numaraları ay atlayınca sıçradığı için otomatik seyreltmeye bırakılır. */
+      labelEvery: (gunlukMu && durum.donem.tip === 'ay')
+        ? function (x) { var n = +x.key.slice(8, 10); return n === 1 || n % 5 === 0; }
+        : null
+    });
+    C.kaydet(g.yenidenCiz);
+  }
+
+  function cizDonemGrafigi() {
+    var d = durum.donem;
+    $('baslik-donemler').textContent = d.tip === 'ay' ? 'Son 6 ay' : 'Son 6 dönem';
+
+    var veri = S.oncekiDonemler(6, d).map(function (p) {
+      return {
+        key: p.donem.bas,
+        label: F.donemKisaEtiket(p.donem),
+        value: p.expense,
+        tipTitle: F.donemEtiket(p.donem),
+        tipValue: F.para(p.expense)
+      };
+    });
+
+    var g = C.sutun($('grafik-aylar'), {
+      data: veri,
+      height: 168,
+      emphasisKey: d.bas,
+      ariaLabel: 'Son 6 dönemin harcaması',
+      empty: 'Kıyaslamak için birkaç dönemlik kayıt gerekiyor.',
+      labelEvery: function () { return true; }
+    });
+    C.kaydet(g.yenidenCiz);
+  }
+
   /* ---------------- İŞLEMLER ---------------- */
 
   function cizIslemler() {
-    var hepsi = S.txForMonth(durum.ym);
+    var hepsi = S.txForDonem(durum.donem);
     var q = durum.arama.toLocaleLowerCase('tr');
 
     var liste = hepsi.filter(function (t) {
@@ -286,7 +350,8 @@
     var gider = 0, gelir = 0;
     liste.forEach(function (t) { if (t.t === 'i') gelir += t.a; else gider += t.a; });
     $('liste-ozet').textContent = liste.length
-      ? liste.length + ' işlem · ' + F.para(gider) + ' gider' + (gelir ? ' · ' + F.para(gelir) + ' gelir' : '')
+      ? liste.length + ' işlem · ' + F.para(gider) + ' gider' +
+        (gelir ? ' · ' + F.para(gelir) + ' gelir' : '')
       : '';
 
     var kap = $('islem-liste');
@@ -296,21 +361,26 @@
       var bos = yeni('div', 'bos-durum');
       bos.innerHTML = '<span class="buyuk">🧾</span>' +
         (hepsi.length ? 'Bu filtreye uyan işlem yok.'
-                      : F.ayAdi(durum.ym) + ' ayına ait kayıt yok.<br>Sağ alttaki + ile ekle.');
+                      : F.donemEtiket(durum.donem) + ' aralığında kayıt yok.<br>Sağ alttaki + ile ekle.');
       kap.appendChild(bos);
       return;
     }
+
+    /* gün başlıklarındaki toplamlar için tek geçişte topla */
+    var gunToplami = {};
+    liste.forEach(function (t) {
+      if (t.t === 'e') gunToplami[t.d] = (gunToplami[t.d] || 0) + t.a;
+    });
 
     var suankiGun = null;
     liste.forEach(function (t) {
       if (t.d !== suankiGun) {
         suankiGun = t.d;
-        var gunToplam = liste.reduce(function (s, x) {
-          return s + (x.d === t.d && x.t === 'e' ? x.a : 0);
-        }, 0);
         var bas = yeni('div', 'gun-basligi');
         bas.appendChild(yeni('span', null, F.tarih(t.d, { gunAdi: true })));
-        if (gunToplam) bas.appendChild(yeni('span', 'gun-toplam', F.para(gunToplam)));
+        if (gunToplami[t.d]) {
+          bas.appendChild(yeni('span', 'gun-toplam', F.para(gunToplami[t.d])));
+        }
         kap.appendChild(bas);
       }
       kap.appendChild(islemSatiri(t));
@@ -322,8 +392,7 @@
     var b = yeni('button', 'islem');
     b.type = 'button';
 
-    var ikon = yeni('div', 'ikon', c.emoji);
-    b.appendChild(ikon);
+    b.appendChild(yeni('div', 'ikon', c.emoji));
 
     var orta = yeni('div', 'orta');
     orta.appendChild(yeni('div', 'ad', c.name));
@@ -340,7 +409,20 @@
 
   /* ---------------- AYARLAR ---------------- */
 
+  function donemOzetMetni() {
+    var d = durum.donem;
+    if (d.tip === 'dongu') {
+      return 'Maaş dönemi — her ayın ' + d.gun + '. günü başlıyor. Şu an: ' + F.donemEtiket(d);
+    }
+    if (d.tip === 'ozel') {
+      return 'Özel aralık: ' + F.donemEtiket(d) + ' · ' + S.donemGunSayisi(d) + ' gün';
+    }
+    return 'Takvim ayı. Şu an: ' + F.donemEtiket(d);
+  }
+
   function cizAyarlar() {
+    $('donem-ayar-ozet').textContent = donemOzetMetni();
+
     var kap = $('ayar-kategoriler');
     kap.innerHTML = '';
     var ham = S.raw();
@@ -352,10 +434,10 @@
       b.appendChild(yeni('span', 'emoji', c.emoji));
       var orta = yeni('div', 'orta');
       orta.appendChild(yeni('div', 'ad', c.name));
-      var altMetin = (c.type === 'i' ? 'Gelir' : 'Gider') +
+      orta.appendChild(yeni('div', 'alt',
+        (c.type === 'i' ? 'Gelir' : 'Gider') +
         (c.budget ? ' · bütçe ' + F.para(c.budget, { tamsayi: true }) : '') +
-        ' · ' + kullanim + ' işlem';
-      orta.appendChild(yeni('div', 'alt', altMetin));
+        ' · ' + kullanim + ' işlem'));
       b.appendChild(orta);
       b.appendChild(yeni('span', 'sag', 'Düzenle'));
       b.addEventListener('click', function () { kategoriFormu(c); });
@@ -421,6 +503,60 @@
     }, 260);
   }
 
+  /* ================= dönem seçimi ================= */
+
+  var donemTaslak = { tip: 'ay', gun: 15, bas: '', son: '' };
+
+  function donemPaneliAc() {
+    var d = durum.donem, ayar = S.settings();
+    donemTaslak.tip = d.tip;
+    donemTaslak.gun = d.tip === 'dongu' ? d.gun : (ayar.donguGunu || 15);
+    donemTaslak.bas = d.bas;
+    donemTaslak.son = d.son;
+    $('donem-gun').value = donemTaslak.gun;
+    $('donem-bas').value = d.bas;
+    $('donem-son').value = d.son;
+    donemPaneliYenile();
+    panelAc('panel-donem');
+  }
+
+  function donemTaslakDonemi() {
+    if (donemTaslak.tip === 'dongu') return S.donemDongu(S.todayISO(), donemTaslak.gun);
+    if (donemTaslak.tip === 'ozel') {
+      if (!donemTaslak.bas || !donemTaslak.son) return null;
+      return S.donemOzel(donemTaslak.bas, donemTaslak.son);
+    }
+    return S.donemAy(S.todayISO().slice(0, 7));
+  }
+
+  function donemPaneliYenile() {
+    Array.prototype.forEach.call($('donem-tip').children, function (c) {
+      c.classList.toggle('chip-secili', c.dataset.tip === donemTaslak.tip);
+    });
+    $('donem-dongu-alan').hidden = donemTaslak.tip !== 'dongu';
+    $('donem-ozel-alan').hidden = donemTaslak.tip !== 'ozel';
+
+    var d = donemTaslakDonemi();
+    $('donem-onizleme').textContent = d
+      ? F.donemEtiket(d) + ' · ' + S.donemGunSayisi(d) + ' gün'
+      : 'İki tarihi de seç.';
+  }
+
+  function donemUygula() {
+    var d = donemTaslakDonemi();
+    if (!d) { bildir('İki tarihi de seç'); return; }
+    if (S.donemGunSayisi(d) > 1830) { bildir('Aralık en fazla 5 yıl olabilir'); return; }
+
+    durum.donem = d;
+    /* Takvim ayı ve maaş dönemi kalıcı tercih; özel aralık tek seferlik bakış */
+    if (d.tip !== 'ozel') {
+      S.setSetting('donemTipi', d.tip);
+      if (d.tip === 'dongu') S.setSetting('donguGunu', d.gun);
+    }
+    panelKapat();
+    ciz();
+  }
+
   /* ================= giriş paneli ================= */
 
   var giris = null;
@@ -462,7 +598,6 @@
   }
 
   function girisYenile() {
-    /* tutar göstergesi */
     var g = $('tutar-goster');
     var bos = giris.tam === '' && giris.ondalik == null;
     g.classList.toggle('bos', bos);
@@ -475,12 +610,10 @@
       g.textContent = metin;
     }
 
-    /* tür seçimi */
     Array.prototype.forEach.call($('giris-tur').children, function (c) {
       c.classList.toggle('chip-secili', c.dataset.tur === giris.tur);
     });
 
-    /* kategoriler */
     var izgara = $('giris-kategoriler');
     izgara.innerHTML = '';
     var liste = S.cats(giris.tur);
@@ -497,7 +630,6 @@
       izgara.appendChild(b);
     });
 
-    /* hızlı tarih */
     var fark = gunFarki(giris.tarih);
     Array.prototype.forEach.call($('giris-tarih-hizli').children, function (c) {
       c.classList.toggle('chip-secili', +c.dataset.gun === fark);
@@ -550,9 +682,12 @@
     S.setSetting('sonTur', giris.tur);
     S.setSetting('sonKat_' + giris.tur, giris.cat);
 
-    /* kaydedilen ay görüntülenen aydan farklıysa oraya geç */
-    var hedefAy = giris.tarih.slice(0, 7);
-    if (hedefAy !== durum.ym) durum.ym = hedefAy;
+    /* Kayıt gösterilen dönemin dışına düştüyse onu kapsayan döneme geç.
+       Özel aralıkta kullanıcının seçtiği aralığı bozmak yerine haber veririz. */
+    if (giris.tarih < durum.donem.bas || giris.tarih > durum.donem.son) {
+      if (durum.donem.tip === 'ozel') bildir('Kaydedildi — seçili aralığın dışında');
+      else durum.donem = S.donemIceren(durum.donem, giris.tarih);
+    }
 
     panelKapat();
     ciz();
@@ -631,10 +766,10 @@
 
     var adGirdi = metinGirdi('f-ad', taslak.name, 'Örn. Market');
     var butceGirdi = metinGirdi('f-butce',
-      taslak.budget ? String(taslak.budget / 100).replace('.', ',') : '', 'Boş bırakılabilir', 'decimal');
+      taslak.budget ? String(taslak.budget / 100).replace('.', ',') : '',
+      'Boş bırakılabilir', 'decimal');
 
     var alanlar = [alan('Kategori adı', adGirdi)];
-
     alanlar.push(alan('Simge', emojiSecici(taslak.emoji, function (e) { taslak.emoji = e; })));
 
     if (yeniMi) {
@@ -644,7 +779,9 @@
         b.type = 'button';
         b.addEventListener('click', function () {
           taslak.type = p[0];
-          Array.prototype.forEach.call(turSatir.children, function (x) { x.classList.remove('chip-secili'); });
+          Array.prototype.forEach.call(turSatir.children, function (x) {
+            x.classList.remove('chip-secili');
+          });
           b.classList.add('chip-secili');
         });
         turSatir.appendChild(b);
@@ -673,9 +810,8 @@
       panelKapat();
       ciz();
     }, yeniMi ? null : function () {
-      var sonuc = confirm('"' + mevcut.name + '" silinsin mi?\n\n' +
-        'Bu kategorideki işlemler silinmez, "Diğer" kategorisine taşınır.');
-      if (!sonuc) return;
+      if (!confirm('"' + mevcut.name + '" silinsin mi?\n\n' +
+                   'Bu kategorideki işlemler silinmez, "Diğer" kategorisine taşınır.')) return;
       var tasinan = S.deleteCat(mevcut.id);
       if (tasinan === -1) { bildir('Bu kategori silinemez'); return; }
       panelKapat();
@@ -724,7 +860,9 @@
       b.addEventListener('click', function () {
         taslak.t = p[0];
         taslak.c = null;
-        Array.prototype.forEach.call(turSatir.children, function (x) { x.classList.remove('chip-secili'); });
+        Array.prototype.forEach.call(turSatir.children, function (x) {
+          x.classList.remove('chip-secili');
+        });
         b.classList.add('chip-secili');
         secimDoldur();
       });
@@ -736,7 +874,7 @@
       alan('Tutar (₺)', tutarGirdi),
       alan('Tür', turSatir),
       alan('Kategori', secim),
-      alan('Ayın kaçıncı günü', gunGirdi, '1–28 arası. Özet ekranından tek tuşla o aya eklersin.')
+      alan('Ayın kaçıncı günü', gunGirdi, '1–28 arası. Özet ekranından tek tuşla o döneme eklersin.')
     ];
 
     formAc(yeniMi ? 'Yeni sabit gider' : 'Sabit gideri düzenle', alanlar, function () {
@@ -802,18 +940,15 @@
             'TAMAM: yedekteki kayıtları mevcutların üstüne EKLE\n' +
             'İPTAL: her şeyi yedekle DEĞİŞTİR (mevcut veriler silinir)');
           if (birlestir) {
-            var eklenen = S.mergeJSON(metin);
-            bildir(eklenen + ' yeni işlem eklendi');
+            bildir(S.mergeJSON(metin) + ' yeni işlem eklendi');
           } else {
             if (!confirm('Emin misin? Şu anki ' + mevcutSayi + ' işlem silinecek.')) return;
-            var sayi = S.importJSON(metin);
-            bildir(sayi + ' işlem geri yüklendi');
+            bildir(S.importJSON(metin) + ' işlem geri yüklendi');
           }
         } else {
-          var n = S.importJSON(metin);
-          bildir(n + ' işlem geri yüklendi');
+          bildir(S.importJSON(metin) + ' işlem geri yüklendi');
         }
-        durum.ym = buAy;
+        durum.donem = varsayilanDonem();
         ciz();
       } catch (e) {
         alert('Yedek okunamadı: ' + e.message);
@@ -825,19 +960,38 @@
   /* ================= olay bağlama ================= */
 
   function bagla() {
-    $('ay-geri').addEventListener('click', function () { ayDegistir(-1); });
-    $('ay-ileri').addEventListener('click', function () { ayDegistir(1); });
-    $('ay-adi').addEventListener('click', function () {
-      durum.ym = buAy;
-      ciz();
-      bildir(F.ayAdi(buAy) + ' ayına dönüldü');
-    });
+    $('ay-geri').addEventListener('click', function () { donemKaydir(-1); });
+    $('ay-ileri').addEventListener('click', function () { donemKaydir(1); });
+    $('ay-adi').addEventListener('click', donemPaneliAc);
 
     Array.prototype.forEach.call($('tabbar').children, function (t) {
       t.addEventListener('click', function () { viewGoster(t.dataset.view); });
     });
 
     $('fab').addEventListener('click', function () { girisAc(null); });
+
+    /* --- dönem paneli --- */
+    $('donem-kapat').addEventListener('click', panelKapat);
+    $('donem-uygula').addEventListener('click', donemUygula);
+    $('donem-ayar-ac').addEventListener('click', donemPaneliAc);
+    $('donem-tip').addEventListener('click', function (e) {
+      var b = e.target.closest('.chip');
+      if (!b) return;
+      donemTaslak.tip = b.dataset.tip;
+      donemPaneliYenile();
+    });
+    $('donem-gun').addEventListener('input', function () {
+      donemTaslak.gun = Math.min(28, Math.max(1, parseInt(this.value, 10) || 1));
+      donemPaneliYenile();
+    });
+    $('donem-bas').addEventListener('change', function () {
+      donemTaslak.bas = this.value;
+      donemPaneliYenile();
+    });
+    $('donem-son').addEventListener('change', function () {
+      donemTaslak.son = this.value;
+      donemPaneliYenile();
+    });
 
     /* --- giriş paneli --- */
     $('giris-kapat').addEventListener('click', panelKapat);
@@ -908,8 +1062,7 @@
     $('kategori-ekle').addEventListener('click', function () { kategoriFormu(null); });
     $('sabit-ekle').addEventListener('click', function () { sabitFormu(null); });
     $('sabit-hepsi').addEventListener('click', function () {
-      var n = S.applyAllFixed(durum.ym);
-      bildir(n + ' sabit gider eklendi');
+      bildir(S.applyAllFixed(durum.donem) + ' sabit gider eklendi');
     });
 
     $('yedek-indir').addEventListener('click', yedekIndir);
@@ -924,7 +1077,7 @@
       if (!confirm('Son kez soruyorum: geri alınamaz. Önce yedek indirmek ister misin?\n\n' +
                    'TAMAM dersen her şey silinir.')) return;
       S.clearAll();
-      durum.ym = buAy;
+      durum.donem = varsayilanDonem();
       bildir('Her şey silindi');
       ciz();
     });
@@ -943,6 +1096,7 @@
   /* ================= başlangıç ================= */
 
   function basla() {
+    durum.donem = varsayilanDonem();
     temaUygula();
     bagla();
     viewGoster('ozet');

@@ -71,6 +71,25 @@
     return GUNLER[d.getDay()];
   }
 
+  /* "2026-09-15" -> "15 Eyl" */
+  function tarihKisa(iso) {
+    return +iso.slice(8, 10) + ' ' + AYLAR_KISA[+iso.slice(5, 7) - 1];
+  }
+
+  /* Dönem başlığı: takvim ayıysa "Eylül 2026", değilse "15 Eyl – 14 Eki" */
+  function donemEtiket(d, kisaMi) {
+    if (d.tip === 'ay') return ayAdi(d.ym, kisaMi);
+    var metin = tarihKisa(d.bas) + ' – ' + tarihKisa(d.son);
+    // Aralık yıl atlıyorsa bitiş yılını da yaz, yoksa kafa karıştırır
+    if (d.bas.slice(0, 4) !== d.son.slice(0, 4)) metin += ' ' + d.son.slice(0, 4);
+    return metin;
+  }
+
+  /* Grafik ekseni gibi dar yerler için tek başlangıç: "15 Eyl" ya da "Eyl" */
+  function donemKisaEtiket(d) {
+    return d.tip === 'ay' ? ayKisa(d.ym) : tarihKisa(d.bas);
+  }
+
   /* Yüzde değişimi: "%12 daha fazla" gibi cümleler için ham sayı üretir */
   function yuzdeFark(simdi, once) {
     if (!once) return null;
@@ -101,6 +120,7 @@
   global.Fmt = {
     AYLAR: AYLAR, AYLAR_KISA: AYLAR_KISA, GUNLER: GUNLER,
     para: para, kisa: kisa, ayAdi: ayAdi, ayKisa: ayKisa,
+    tarihKisa: tarihKisa, donemEtiket: donemEtiket, donemKisaEtiket: donemKisaEtiket,
     tarih: tarih, gunAdi: gunAdi, yuzdeFark: yuzdeFark, metindenKurus: metindenKurus
   };
 })(window);

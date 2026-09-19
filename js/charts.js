@@ -131,9 +131,11 @@
       });
 
       /* Alt eksen: her sütuna yazı sığmaz, seyreltilir */
-      var adim = Math.max(1, Math.ceil(veri.length / Math.floor(alanG / 26)));
+      /* Eşit aralıklı seyreltme: sona zorla etiket koymak komşusuyla çakışıyordu */
+      var sigan = Math.max(1, Math.floor(alanG / 26));
+      var adim = Math.max(1, Math.ceil(veri.length / sigan));
       veri.forEach(function (d, i) {
-        var goster = o.labelEvery ? o.labelEvery(d, i, veri.length) : (i % adim === 0 || i === veri.length - 1);
+        var goster = o.labelEvery ? o.labelEvery(d, i, veri.length) : (i % adim === 0);
         if (!goster) return;
         var t = el('text', { x: kutular[i].x, y: H - 6, class: 'ax-tick', 'text-anchor': 'middle' });
         t.textContent = d.label;
