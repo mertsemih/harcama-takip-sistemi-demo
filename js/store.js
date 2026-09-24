@@ -458,10 +458,13 @@
     return fixedOlaylari(d).filter(function (x) { return !x.eklendi; });
   }
 
-  function applyOne(f, ym) {
+  /* tutar verilirse yalnız bu kayda uygulanır; sabit kaydın kendisi değişmez */
+  function applyOne(f, ym, tutar) {
     var day = Math.min(f.day || 1, daysInMonth(ym));
     var t = {
-      id: uid(), t: f.t, a: f.a, c: f.c,
+      id: uid(), t: f.t,
+      a: (tutar != null && tutar > 0) ? Math.round(tutar) : f.a,
+      c: f.c,
       d: ym + '-' + pad2(day), n: f.name, ts: Date.now()
     };
     state.tx.push(t);
@@ -470,10 +473,10 @@
     return t;
   }
 
-  function applyFixed(id, ym) {
+  function applyFixed(id, ym, tutar) {
     var f = state.fixed.filter(function (x) { return x.id === id; })[0];
     if (!f || appliedIds(ym).indexOf(id) !== -1) return null;
-    var t = applyOne(f, ym);
+    var t = applyOne(f, ym, tutar);
     save();
     return t;
   }

@@ -93,7 +93,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 svg { display: block; }
 
-.app-bar svg, .tab svg, .fab svg, .panel-kapat svg, .ay-ok svg, .tus svg {
+.app-bar svg, .tab svg, .fab svg, .panel-kapat svg, .ay-ok svg, .tus svg, .satir-ikon svg {
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -153,6 +153,20 @@ h1, h2, h3, p { margin: 0; }
 /* sabit gider satırında ad + tarih alt alta */
 .sabit-ad { min-width: 0; }
 .sabit-tarih { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+/* iki düğme yan yana dururken uzun ad satırı kaydırmasın */
+.sabit-ad > div:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* satır içi küçük eylem düğmesi (sabit kaydın tutarını değiştir) */
+.satir-ikon {
+  width: 30px; height: 30px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  flex: none;
+}
+.satir-ikon:active { background: var(--base); }
+.satir-ikon svg { width: 15px; height: 15px; }
 
 /* dönem panelindeki canlı önizleme */
 .donem-onizleme {

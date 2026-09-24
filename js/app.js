@@ -158,6 +158,14 @@
       var sag = yeni('div', 'sol');
       sag.appendChild(yeni('span', 'tutar ' + (f.t === 'i' ? 'gelir' : 'gider'),
         F.isaretliPara(f.a, f.t)));
+      var kalem = yeni('button', 'satir-ikon');
+      kalem.type = 'button';
+      kalem.setAttribute('aria-label', f.name + ' tutarını değiştirerek ekle');
+      kalem.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>';
+      kalem.addEventListener('click', function () { sabitAyarla(x); });
+      sag.appendChild(kalem);
+
       var dugme = yeni('button', 'dugme-ince', '+ Ekle');
       dugme.type = 'button';
       dugme.addEventListener('click', function () {
@@ -699,8 +707,9 @@
 
   var formKaydet = null;
 
-  function formAc(baslik, alanlar, kaydetFn, silFn) {
+  function formAc(baslik, alanlar, kaydetFn, silFn, kaydetEtiketi) {
     $('form-baslik').textContent = baslik;
+    $('form-kaydet').textContent = kaydetEtiketi || 'Kaydet';
     var govde = $('form-govde');
     govde.innerHTML = '';
     alanlar.forEach(function (a) { govde.appendChild(a); });
@@ -723,6 +732,59 @@
     d.appendChild(kontrol);
     if (ipucu) d.appendChild(yeni('p', 'form-ipucu', ipucu));
     return d;
+  }
+
+  /* Tek seçimli chip satırı — şimdilik yalnız sabit kayıt tutar panelinde */
+  function chipSatiri(secenekler, secili, secildi) {
+    var kap = yeni('div', 'chip-satir');
+    secenekler.forEach(function (p) {
+      var b = yeni('button', 'chip' + (p[0] === secili ? ' chip-secili' : ''), p[1]);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        Array.prototype.forEach.call(kap.children, function (o) {
+          o.classList.remove('chip-secili');
+        });
+        b.classList.add('chip-secili');
+        secildi(p[0]);
+      });
+      kap.appendChild(b);
+    });
+    return kap;
+  }
+
+  /* Sabit kaydı döneme eklerken tutarı değiştirmek için.
+     İki ayrı niyet var ve karıştırılırsa veri bozulur:
+       "sadece bu dönem" -> tek seferlik fark, şablon aynı kalır
+       "bundan sonra hep" -> zam; şablon da güncellenir */
+  function sabitAyarla(x) {
+    var f = x.fixed;
+    var kalici = false;
+
+    var tutarGirdi = metinGirdi('sa-tutar',
+      String(f.a / 100).replace('.', ','), '0,00', 'decimal');
+
+    var kapsam = chipSatiri(
+      [['bir', 'Sadece bu dönem'], ['hep', 'Bundan sonra hep']], 'bir',
+      function (v) { kalici = (v === 'hep'); });
+
+    var alanlar = [
+      alan('Tutar (₺)', tutarGirdi,
+        F.tarihKisa(x.iso) + ' tarihine ' +
+        (f.t === 'i' ? 'gelir' : 'gider') + ' olarak eklenecek.'),
+      alan('Bu değişiklik', kapsam,
+        'Maaşa zam geldiyse "Bundan sonra hep" seç, sabit kayıt da güncellensin. ' +
+        'Yalnız bu aya özel bir farksa "Sadece bu dönem" bırak.')
+    ];
+
+    formAc(f.name, alanlar, function () {
+      var tutar = F.metindenKurus(tutarGirdi.value);
+      if (tutar <= 0) { bildir('Tutar gerekli'); return; }
+      if (kalici) S.updateFixed(f.id, { a: tutar });
+      S.applyFixed(f.id, x.ym, tutar);
+      panelKapat();
+      bildir(f.name + ' eklendi' + (kalici ? ', tutarı güncellendi' : ''));
+      ciz();
+    }, null, 'Ekle');
   }
 
   function metinGirdi(id, deger, yerTutucu, mod) {
