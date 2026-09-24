@@ -2,7 +2,7 @@
    HTML'de önce ağ denenir (yeni sürüm hemen gelsin diye),
    diğer dosyalarda önbellekten verilip arkada tazelenir. */
 
-var SURUM = 'harcama-v2';
+var SURUM = 'harcama-v3';
 var KABUK = [
   './',
   './index.html',

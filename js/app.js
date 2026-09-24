@@ -138,8 +138,8 @@
     if (!bekleyen.length) { kart.hidden = true; return; }
     kart.hidden = false;
     $('baslik-sabit').textContent = durum.donem.tip === 'ay'
-      ? 'Bu ayın sabit giderleri'
-      : 'Bu dönemin sabit giderleri';
+      ? 'Bu ayın sabit kayıtları'
+      : 'Bu dönemin sabit kayıtları';
 
     var liste = $('sabit-bekleyen');
     liste.innerHTML = '';
@@ -156,7 +156,8 @@
       li.appendChild(sol);
 
       var sag = yeni('div', 'sol');
-      sag.appendChild(yeni('span', 'tutar', F.para(f.a)));
+      sag.appendChild(yeni('span', 'tutar ' + (f.t === 'i' ? 'gelir' : 'gider'),
+        F.isaretliPara(f.a, f.t)));
       var dugme = yeni('button', 'dugme-ince', '+ Ekle');
       dugme.type = 'button';
       dugme.addEventListener('click', function () {
@@ -399,8 +400,8 @@
     if (t.n && t.n !== c.name) orta.appendChild(yeni('div', 'alt', t.n));
     b.appendChild(orta);
 
-    var tutar = yeni('div', 'tutar' + (t.t === 'i' ? ' gelir' : ''));
-    tutar.textContent = (t.t === 'i' ? '+' : '−') + F.para(t.a).replace('-', '');
+    var tutar = yeni('div', 'tutar ' + (t.t === 'i' ? 'gelir' : 'gider'));
+    tutar.textContent = F.isaretliPara(t.a, t.t);
     b.appendChild(tutar);
 
     b.addEventListener('click', function () { girisAc(t.id); });
@@ -448,7 +449,7 @@
     sKap.innerHTML = '';
     var sabitler = S.fixedList();
     if (!sabitler.length) {
-      sKap.appendChild(yeni('p', 'chart-empty', 'Henüz sabit gider yok.'));
+      sKap.appendChild(yeni('p', 'chart-empty', 'Henüz sabit kayıt yok.'));
     } else {
       sabitler.forEach(function (f) {
         var b = yeni('button', 'ayar-satir');
@@ -459,7 +460,8 @@
         orta.appendChild(yeni('div', 'alt',
           'Her ayın ' + f.day + '. günü · ' + (f.t === 'i' ? 'gelir' : 'gider')));
         b.appendChild(orta);
-        b.appendChild(yeni('span', 'sag', F.para(f.a, { tamsayi: true })));
+        b.appendChild(yeni('span', 'sag ' + (f.t === 'i' ? 'gelir' : 'gider'),
+          F.isaretliPara(f.a, f.t, { tamsayi: true })));
         b.addEventListener('click', function () { sabitFormu(f); });
         sKap.appendChild(b);
       });
@@ -877,7 +879,7 @@
       alan('Ayın kaçıncı günü', gunGirdi, '1–28 arası. Özet ekranından tek tuşla o döneme eklersin.')
     ];
 
-    formAc(yeniMi ? 'Yeni sabit gider' : 'Sabit gideri düzenle', alanlar, function () {
+    formAc(yeniMi ? 'Yeni sabit kayıt' : 'Sabit kaydı düzenle', alanlar, function () {
       var ad = adGirdi.value.trim();
       var tutar = F.metindenKurus(tutarGirdi.value);
       if (!ad) { bildir('Ad gerekli'); return; }
@@ -888,8 +890,8 @@
       bildir('Kaydedildi');
       ciz();
     }, yeniMi ? null : function () {
-      if (!confirm('"' + mevcut.name + '" sabit giderlerden silinsin mi?\n\n' +
-                   'Daha önce aylara eklenmiş kayıtlar silinmez.')) return;
+      if (!confirm('"' + mevcut.name + '" sabit kayıtlardan silinsin mi?\n\n' +
+                   'Daha önce aylara eklenmiş işlemler silinmez.')) return;
       S.deleteFixed(mevcut.id);
       panelKapat();
       bildir('Silindi');
@@ -1062,7 +1064,7 @@
     $('kategori-ekle').addEventListener('click', function () { kategoriFormu(null); });
     $('sabit-ekle').addEventListener('click', function () { sabitFormu(null); });
     $('sabit-hepsi').addEventListener('click', function () {
-      bildir(S.applyAllFixed(durum.donem) + ' sabit gider eklendi');
+      bildir(S.applyAllFixed(durum.donem) + ' sabit kayıt eklendi');
     });
 
     $('yedek-indir').addEventListener('click', yedekIndir);

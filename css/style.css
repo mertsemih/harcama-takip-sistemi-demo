@@ -403,7 +403,14 @@ h1, h2, h3, p { margin: 0; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.islem .tutar.gelir { color: var(--gelir-yazi); }
+/* gelir / gider ayrımı: işaret + renk birlikte çalışır, renk tek başına değil */
+.islem .tutar.gelir,
+.sade-liste .tutar.gelir,
+.ayar-satir .sag.gelir { color: var(--gelir-yazi); }
+
+.islem .tutar.gider,
+.sade-liste .tutar.gider,
+.ayar-satir .sag.gider { color: var(--kritik); }
 
 .liste-ozet { font-size: 13px; color: var(--ink-3); padding: 0 4px; }
 

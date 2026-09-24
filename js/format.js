@@ -90,6 +90,12 @@
     return d.tip === 'ay' ? ayKisa(d.ym) : tarihKisa(d.bas);
   }
 
+  /* Gelir mi gider mi olduğunu gözle seçilir kılar: "+1.250,00 ₺" / "−1.250,00 ₺"
+     İşaret rengin yanında ikinci bir kanal — renk tek başına anlam taşımaz. */
+  function isaretliPara(kurus, tur, opts) {
+    return (tur === 'i' ? '+' : '−') + para(Math.abs(kurus), opts);
+  }
+
   /* Yüzde değişimi: "%12 daha fazla" gibi cümleler için ham sayı üretir */
   function yuzdeFark(simdi, once) {
     if (!once) return null;
@@ -121,6 +127,7 @@
     AYLAR: AYLAR, AYLAR_KISA: AYLAR_KISA, GUNLER: GUNLER,
     para: para, kisa: kisa, ayAdi: ayAdi, ayKisa: ayKisa,
     tarihKisa: tarihKisa, donemEtiket: donemEtiket, donemKisaEtiket: donemKisaEtiket,
+    isaretliPara: isaretliPara,
     tarih: tarih, gunAdi: gunAdi, yuzdeFark: yuzdeFark, metindenKurus: metindenKurus
   };
 })(window);
